@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulir Administrasi User</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @import url('https://script.google.com/macros/s/AKfycbzQwdISWz7uta2bzYp10RSBGcYoM7nTV9275k2TMCf-iTR2l6kfOjf87_InXt4BpXo/exec');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        /* Layout web dipadatkan sedikit agar menyerupai aslinya */
+        .form-section-title { background-color: #e5e7eb; padding: 0.4rem 0.5rem; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; border-top: 2px solid #1e3a8a; border-bottom: 1px solid #d1d5db; margin-top: 1rem; margin-bottom: 0.75rem;}
+        .input-line { border: none; border-bottom: 1px solid #9ca3af; border-radius: 0; padding: 0.15rem 0; width: 100%; background-color: transparent; outline: none; transition: border-color 0.2s;}
+        .input-line:focus { border-bottom: 2px solid #2563eb; }
+        
+        /* Loading Overlay */
+        #loadingOverlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.8); z-index: 9999;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%;
+            width: 40px; height: 40px; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* ======================================================== */
+        /* PENGATURAN CETAK (PRINT) FLEKSIBEL A4 / F4               */
+        /* ======================================================== */
+        @media print {
+            @page {
+                /* Dihapus paksaan A4 agar mengikuti settingan kertas printer user (F4/Folio/A4) */
+                margin: 5mm; 
+            }
+            body { 
+                background-color: white !important; 
+                padding: 0 !important; 
+                margin: 0 !important;
+                font-size: 9.5px !important; 
+                color: black !important;
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important;
+            }
+            .no-print { display: none !important; }
+            
+            /* Bingkai Utama dipres */
+            .max-w-5xl { 
+                box-shadow: none !important; 
+                border: 2px solid black !important;
+                margin: 0 auto !important; 
+                max-width: 100% !important; 
+                width: 100% !important; 
+                padding: 4px 8px !important; 
+                border-radius: 0 !important;
+                box-sizing: border-box !important;
+            }
+
+            /* Mencegah tabel dan TTD meluber ke kanan/terpotong (Override batas ukuran HP) */
+            .min-w-\[500px\], .min-w-\[700px\] {
+                min-width: 0 !important;
+                width: 100% !important;
+            }
+            
+            /* Kompresi Spasi Ekstrem */
+            .mb-6, .mb-8, .mb-10 { margin-bottom: 2px !important; }
+            .mt-6, .mt-8 { margin-top: 2px !important; }
+            .pb-6 { padding-bottom: 2px !important; }
+            .gap-4, .gap-8 { gap: 2px !important; }
+            .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.5px !important; }
+            
+            h2.text-2xl { font-size: 12px !important; margin: 0 !important; }
+            img.h-12, img.md\:h-16 { height: 32px !important; }
+            .bg-yellow-50 { border: 1px solid black !important; padding: 1px 2px !important; }
+            
+            /* PERBAIKAN HEADER: Memaksa tata letak menyamping, Logo di Kiri & No Reg di Kanan */
+            .print-header { flex-direction: row !important; justify-content: space-between !important; align-items: flex-start !important; }
+            .print-logo { width: auto !important; justify-content: flex-start !important; }
+            .print-reg { width: auto !important; align-items: flex-end !important; margin-right: 5px !important; }
+            .print-reg-box { width: auto !important; justify-content: flex-end !important; }
+
+            /* PERBAIKAN INPUT FORM: Mencegah inputan turun bertumpuk seperti mode HP saat diprint */
+            .sm\:flex-row { flex-direction: row !important; align-items: center !important; }
+            .sm\:inline { display: inline !important; }
+            .sm\:mb-0 { margin-bottom: 0 !important; }
+            .sm\:w-40 { width: 10rem !important; }
+            .sm\:w-48 { width: 12rem !important; }
+            .sm\:w-64 { width: 16rem !important; }
+            .sm\:w-auto { width: auto !important; }
+            
+            .form-section-title { 
+                background-color: #e5e7eb !important; 
+                color: black !important; 
+                margin-top: 3px !important;
+                margin-bottom: 3px !important;
+                padding: 2px 4px !important;
+                font-size: 10px !important;
+                border: 1px solid black !important;
+            }
+            
+            .input-line { 
+                border-bottom: 1px solid black !important; 
+                font-size: 9.5px !important; 
+                padding: 0 !important;
+                height: 13px !important;
+            }
+            
+            table { font-size: 9px !important; border-collapse: collapse !important; width: 100% !important; margin-bottom: 2px !important; }
+            th, td { padding: 1px 2px !important; border: 1px solid black !important; }
+            
+            /* ========================================================= */
+            /* PERBAIKAN SEKSI E: DIPERLEBAR & FONT DIPERBESAR SAAT PRINT*/
+            /* ========================================================= */
+            .grid-cols-4 { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+            .border-2 { border-width: 1px !important; }
+            
+            #sig-section .h-64 { height: 115px !important; } 
+            #sig-section .h-12 { height: 32px !important; }
+            #sig-section .h-6 { height: 16px !important; }
+            
+            #sig-section .p-1\.5, #sig-section .p-2 { padding: 3px !important; }
+            #sig-section .mb-1, #sig-section .mb-0\.5 { margin-bottom: 2px !important; }
+            
+            #sig-section * { font-size: 9px !important; }
+            #sig-section .text-\[9px\] { font-size: 8px !important; line-height: 1.1 !important; }
+            #sig-section .font-bold { font-size: 9.5px !important; }
+            
+            /* Hanya target elemen yg rawan terpotong antar halaman, div general dihapus agar tidak error */
+            table, #sig-section, .form-section-title { page-break-inside: avoid !important; break-inside: avoid !important; }
+        }
+    </style>
+</head>
+<body class="text-gray-800 pb-10">
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <p class="mt-3 font-semibold text-blue-600" id="loadingText">Menyimpan data...</p>
+    </div>
+
+    <!-- Notification Mode -->
+    <div id="modeAlert" class="bg-yellow-100 text-yellow-800 text-center py-2 text-sm font-semibold hidden no-print">
+        ⚠️ Berjalan di Mode Simulasi (Preview Canvas)
+    </div>
+
+    <!-- DATALIST DROPDOWNS -->
+    <datalist id="namaList">
+        <option value="ADRYANA DESY WAKUM"><option value="ASWIR"><option value="AUREL RENARDA YAPSOUMILENA"><option value="BAREND RUMBIAK"><option value="BETTY MEKLIN AURI"><option value="CLAUDIA BRIGEET DUMATUBUN"><option value="DAMIANA WOKUT SAROP"><option value="DARNIATI SYAM"><option value="DESSY NATALIA BANDI"><option value="ELSA MAGDALENA RUMASEB"><option value="FILY SIERA NANLOHY"><option value="IRMAWATI SALLE"><option value="ISAK SAMUEL NANDOTRAY"><option value="ISRAFEL KALAIBIN"><option value="JEMI PASINO"><option value="JENIFER B AJAWAILA"><option value="JULITA JITMAU"><option value="LERIANA MINCE LENORCE WAROMI"><option value="MARTHEN NAUW"><option value="MELVIN EDWIN BALLA"><option value="MUHAMAD ALIMUDDIN"><option value="NOVITA LEMAUK"><option value="PETRUS OSWALD MRAMRA"><option value="ROBERTH O KOIBUR"><option value="ROSINA Y A PAISEY"><option value="SLAMET WIDODO"><option value="TRISNO JHOSUA YAPPEN"><option value="UMI KOHLIFAH"><option value="YUDITH G LANOH"><option value="YUDITH GISELIA LANOH">
+    </datalist>
+    <datalist id="jabatanList">
+        <option value="ADMINISTRASI KREDIT"><option value="ADMINISTRASI PEMBUKUAN"><option value="ADMINISTRASI UMUM"><option value="ADMIN TRANSFER"><option value="ANALIS KREDIT"><option value="CUSTOMER SERVICE"><option value="FUNDING OFFICER"><option value="IT CABANG"><option value="KASDA"><option value="PAJAK ON-LINE"><option value="PENGKINIAN DATA"><option value="PENYELAMATAN KREDIT"><option value="PIMPINAN OPERASIONAL"><option value="SUPERVISI DANA"><option value="SUPERVISI KREDIT"><option value="SUPERVISI TRANSFER"><option value="SUPERVISI UMUM"><option value="TELLER">
+    </datalist>
+    <datalist id="userIdList">
+        <option value="a2332"><option value="a3655"><option value="i0817"><option value="i1322"><option value="i1434"><option value="i1871"><option value="i1884"><option value="i2054"><option value="i2332"><option value="i2366"><option value="i2370"><option value="i2423"><option value="i2479"><option value="i2497"><option value="i2776"><option value="i3052"><option value="i3128"><option value="i3175"><option value="i3194"><option value="i3332"><option value="i3471"><option value="i3651"><option value="i3652"><option value="i3653"><option value="i3655"><option value="i9629"><option value="i9630"><option value="j1783"><option value="m9149"><option value="p0598"><option value="p1434"><option value="p1500"><option value="p2479">
+    </datalist>
+    <datalist id="cabangList">
+        <option value="302 - Wasior"><option value="099 - Jayapura"><option value="098 - Abepura"><option value="097 - Sentani"><option value="096 - Biak">
+    </datalist>
+    <datalist id="bagianList">
+        <option value="DEPARTEMEN PENDUKUNG"><option value="DEPARTEMEN LAYANAN"><option value="DEPARTEMEN KREDIT DANA DAN JASA">
+    </datalist>
+
+    <!-- CONTAINER UTAMA -->
+    <div id="printableArea" class="max-w-5xl mx-auto bg-white p-4 sm:p-6 md:p-10 mt-6 shadow-xl border border-gray-200">
+        
+        <form id="userForm" onsubmit="handleFormSubmit(event)">
+            
+            <!-- HEADER -->
+            <div class="flex flex-col md:flex-row justify-between items-center md:items-start mb-6 gap-4 print-header">
+                <div class="flex items-center w-full md:w-auto justify-center md:justify-start print-logo">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/50/Logo_Bank_Papua.png" 
+                         alt="Logo Bank Papua" 
+                         class="h-12 md:h-14 object-contain">
+                </div>
+                <div class="flex flex-col text-sm md:mr-6 w-full md:w-auto items-center md:items-end print-reg">
+                    <div class="flex items-center space-x-2 bg-yellow-50 border-2 border-yellow-400 p-1.5 rounded-md w-full md:w-auto justify-center print-reg-box">
+                        <label class="font-bold whitespace-nowrap text-xs sm:text-sm">No. Register :</label>
+                        <input type="text" id="noRegister" name="No_Register" class="border border-gray-300 px-2 py-0.5 w-32 md:w-40 bg-white focus:outline-none font-bold text-red-600 text-center" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mb-6">
+                <h2 class="text-lg sm:text-xl md:text-2xl font-bold uppercase underline decoration-2 underline-offset-4 mb-2">Formulir Administrasi User</h2>
+            </div>
+
+            <!-- UNIT KERJA -->
+            <div class="flex justify-center mb-6 pb-4 border-b-2 border-blue-900">
+                <div class="flex flex-col space-y-3 w-full max-w-lg">
+                    <div class="flex flex-col sm:flex-row sm:items-center">
+                        <label class="font-bold w-full sm:w-40 text-sm sm:text-base mb-1 sm:mb-0">UNIT KERJA</label>
+                        <span class="hidden sm:inline mx-2 font-bold">:</span>
+                        <input type="text" name="Unit_Kerja" class="input-line flex-1 uppercase font-semibold w-full" required>
+                    </div>
+                    <div class="flex flex-col sm:flex-row sm:items-center">
+                        <label class="font-bold w-full sm:w-40 text-sm sm:text-base mb-1 sm:mb-0">BAGIAN</label>
+                        <span class="hidden sm:inline mx-2 font-bold">:</span>
+                        <input type="text" name="Bagian" list="bagianList" class="input-line flex-1 uppercase font-semibold w-full">
+                    </div>
+                </div>
+            </div>
+
+            <!-- JENIS PERMINTAAN -->
+            <div class="flex flex-wrap gap-3 sm:gap-4 md:gap-8 mb-6 font-medium text-sm sm:text-base">
+                <label class="flex items-center space-x-2 cursor-pointer w-full sm:w-auto"><input type="radio" name="Jenis_Permintaan" value="Daftar / Pengaktifan" required class="w-4 h-4 sm:w-5 sm:h-5"><span>Daftar / Pengaktifan</span></label>
+                <label class="flex items-center space-x-2 cursor-pointer w-full sm:w-auto"><input type="radio" name="Jenis_Permintaan" value="Non Aktifkan User" class="w-4 h-4 sm:w-5 sm:h-5"><span>Non Aktifkan User</span></label>
+                <label class="flex items-center space-x-2 cursor-pointer w-full sm:w-auto"><input type="radio" name="Jenis_Permintaan" value="Ubah Data User" class="w-4 h-4 sm:w-5 sm:h-5"><span>Ubah Data User</span></label>
+                <label class="flex items-center space-x-2 cursor-pointer w-full sm:w-auto"><input type="radio" name="Jenis_Permintaan" value="Hapus User" class="w-4 h-4 sm:w-5 sm:h-5"><span>Hapus User</span></label>
+                <label class="flex items-center space-x-2 cursor-pointer w-full sm:w-auto"><input type="radio" name="Jenis_Permintaan" value="Reset Password" class="w-4 h-4 sm:w-5 sm:h-5"><span>Reset Password</span></label>
+            </div>
+
+            <!-- SECTION A -->
+            <div class="form-section-title">A. SISTEM / APLIKASI</div>
+            <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-sm sm:text-base">
+                <label class="flex items-center space-x-2"><input type="checkbox" name="Sistem_Aplikasi" value="OLIBS" class="w-4 h-4 sm:w-5 sm:h-5"> <span>OLIBS</span></label>
+                <label class="flex items-center space-x-2"><input type="checkbox" name="Sistem_Aplikasi" value="LHBU" class="w-4 h-4 sm:w-5 sm:h-5"> <span>LHBU</span></label>
+                <label class="flex items-center space-x-2"><input type="checkbox" name="Sistem_Aplikasi" value="DOWNLOAD REPORT" class="w-4 h-4 sm:w-5 sm:h-5"> <span>REPORT</span></label>
+                <label class="flex items-center space-x-2"><input type="checkbox" name="Sistem_Aplikasi" value="CARD CENTER" class="w-4 h-4 sm:w-5 sm:h-5"> <span>CARD CENTER</span></label>
+                <label class="flex items-center space-x-2"><input type="checkbox" name="Sistem_Aplikasi" value="INTRANET" class="w-4 h-4 sm:w-5 sm:h-5"> <span>INTRANET</span></label>
+                <label class="flex items-center space-x-2"><input type="checkbox" name="Sistem_Aplikasi" value="DATA WAREHOUSE" class="w-4 h-4 sm:w-5 sm:h-5"> <span>DWH</span></label>
+                <label class="flex items-center space-x-2 col-span-2 sm:col-span-2">
+                    <input type="checkbox" name="Sistem_Aplikasi" value="Lainnya" id="chkLainnya" class="w-4 h-4 sm:w-5 sm:h-5"> 
+                    <span>Lainnya:</span>
+                    <input type="text" id="inputLainnya" name="Sistem_Aplikasi_Lainnya" class="input-line flex-1 ml-2 w-full" placeholder="...">
+                </label>
+            </div>
+
+            <!-- SECTION B -->
+            <div class="form-section-title">B. INFORMASI USER</div>
+            <div class="space-y-4 sm:space-y-3 mb-4">
+                <div class="flex flex-col sm:flex-row sm:items-center"><label class="w-full sm:w-48 text-sm sm:text-base font-semibold sm:font-normal mb-1 sm:mb-0">Dasar Penetapan</label><span class="hidden sm:inline mx-2">:</span><input type="text" name="Dasar_Penetapan" class="input-line flex-1 w-full"></div>
+                <div class="flex flex-col sm:flex-row sm:items-center"><label class="w-full sm:w-48 text-sm sm:text-base font-bold mb-1 sm:mb-0">Nama Lengkap</label><span class="hidden sm:inline mx-2">:</span><input type="text" name="Nama_Lengkap" id="namaLengkap" list="namaList" class="input-line flex-1 font-bold w-full" required oninput="syncName()"></div>
+                <div class="flex flex-col sm:flex-row sm:items-center"><label class="w-full sm:w-48 text-sm sm:text-base font-semibold sm:font-normal mb-1 sm:mb-0">NPP</label><span class="hidden sm:inline mx-2">:</span><input type="text" name="NPP" class="input-line flex-1 w-full"></div>
+                <div class="flex flex-col sm:flex-row sm:items-center"><label class="w-full sm:w-48 text-sm sm:text-base font-semibold sm:font-normal mb-1 sm:mb-0">Jabatan</label><span class="hidden sm:inline mx-2">:</span><input type="text" name="Jabatan" list="jabatanList" class="input-line flex-1 w-full"></div>
+                <div class="flex flex-col sm:flex-row sm:items-center"><label class="w-full sm:w-48 text-sm sm:text-base font-semibold sm:font-normal mb-1 sm:mb-0">Nomor Telepon/HP</label><span class="hidden sm:inline mx-2">:</span><input type="text" name="No_HP" class="input-line flex-1 w-full" required></div>
+                <div class="flex flex-col sm:flex-row sm:items-center"><label class="w-full sm:w-48 text-sm sm:text-base font-semibold sm:font-normal mb-1 sm:mb-0">Kode Cabang</label><span class="hidden sm:inline mx-2">:</span><input type="text" name="Kode_Cabang" list="cabangList" class="input-line flex-1 font-bold w-full"></div>
+                <div class="flex flex-col sm:flex-row sm:items-center"><label class="w-full sm:w-48 text-sm sm:text-base font-semibold sm:font-normal mb-1 sm:mb-0">Alamat Lokasi</label><span class="hidden sm:inline mx-2">:</span><input type="text" name="Alamat_Cabang" class="input-line flex-1 w-full"></div>
+                <div class="flex flex-col sm:flex-row sm:items-center"><label class="w-full sm:w-48 text-sm sm:text-base font-bold mb-1 sm:mb-0">User ID</label><span class="hidden sm:inline mx-2">:</span><input type="text" name="User_ID" list="userIdList" class="input-line flex-1 font-bold text-blue-800 w-full"></div>
+            </div>
+
+            <!-- SECTION C -->
+            <div class="form-section-title">C. INFORMASI AKSES SISTEM</div>
+            <div class="space-y-4 sm:space-y-3 mb-4">
+                <div class="flex flex-col sm:flex-row sm:items-center"><label class="w-full sm:w-64 text-sm sm:text-base font-semibold sm:font-normal mb-1 sm:mb-0">Batas Maksimum Authorisasi Tunai</label><span class="hidden sm:inline mx-2">:</span><input type="number" name="Max_Auth_Tunai" class="input-line flex-1 w-full"></div>
+                <div class="flex flex-col sm:flex-row sm:items-center"><label class="w-full sm:w-64 text-sm sm:text-base font-semibold sm:font-normal mb-1 sm:mb-0">Batas Maksimum Authorisasi OB</label><span class="hidden sm:inline mx-2">:</span><input type="number" name="Max_Auth_OB" class="input-line flex-1 w-full"></div>
+                <div class="flex flex-col sm:flex-row sm:items-center"><label class="w-full sm:w-64 text-sm sm:text-base font-semibold sm:font-normal mb-1 sm:mb-0">Wewenang Menu 1</label><span class="hidden sm:inline mx-2">:</span><input type="text" name="Wew_Menu_1" list="jabatanList" class="input-line flex-1 w-full"></div>
+                <div class="flex flex-col sm:flex-row sm:items-center"><label class="w-full sm:w-64 text-sm sm:text-base font-semibold sm:font-normal mb-1 sm:mb-0">Wewenang Menu 2</label><span class="hidden sm:inline mx-2">:</span><input type="text" name="Wew_Menu_2" list="jabatanList" class="input-line flex-1 w-full"></div>
+                <div class="flex flex-col sm:flex-row sm:items-center"><label class="w-full sm:w-64 text-sm sm:text-base font-semibold sm:font-normal mb-1 sm:mb-0">Wewenang Menu 3</label><span class="hidden sm:inline mx-2">:</span><input type="text" name="Wew_Menu_3" list="jabatanList" class="input-line flex-1 w-full"></div>
+                <div class="flex flex-col sm:flex-row sm:items-center">
+                    <label class="w-full sm:w-64 text-sm sm:text-base font-semibold sm:font-normal mb-1 sm:mb-0">Wewenang System Admin</label>
+                    <span class="hidden sm:inline mx-2">:</span>
+                    <div class="flex items-center gap-4">
+                        <label class="cursor-pointer"><input type="radio" name="Wew_System_Admin" value="Boleh"> Boleh</label>
+                        <label class="cursor-pointer"><input type="radio" name="Wew_System_Admin" value="Tidak"> Tidak</label>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center"><label class="w-full sm:w-64 text-sm sm:text-base font-bold mb-1 sm:mb-0">Tanggal Efektif</label><span class="hidden sm:inline mx-2">:</span><input type="date" name="Tanggal_Efektif" id="autoDate" class="input-line flex-1 font-bold w-full"></div>
+                <div class="flex flex-col sm:flex-row sm:items-center"><label class="w-full sm:w-64 text-sm sm:text-base font-semibold sm:font-normal mb-1 sm:mb-0">Keterangan</label><span class="hidden sm:inline mx-2">:</span><input type="text" name="Keterangan" class="input-line flex-1 w-full"></div>
+            </div>
+
+            <!-- SECTION D (DITAMBAHKAN SESUAI ASLINYA) -->
+            <div class="form-section-title">D. BATAS MAKSIMUM TRANSAKSI</div>
+            <div class="overflow-x-auto mb-6 w-full">
+                <table class="w-full text-sm border-collapse border border-gray-300 min-w-[500px]">
+                    <thead class="bg-gray-100">
+                        <tr><th class="border px-2 py-2 text-left">Jenis Transaksi</th><th class="border px-2 py-2">Cabang Sendiri</th><th class="border px-2 py-2">Antar Cabang</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="border px-2 py-1 font-medium">Maksimum Setor Tunai</td><td class="border px-2 py-1"><input type="number" name="Trans_Maks_Setor_Tunai_Sendiri" class="w-full bg-transparent outline-none p-1"></td><td class="border px-2 py-1"><input type="number" name="Trans_Maks_Setor_Tunai_Antar" class="w-full bg-transparent outline-none p-1"></td></tr>
+                        <tr><td class="border px-2 py-1 font-medium">Maksimum Tarik Tunai</td><td class="border px-2 py-1"><input type="number" name="Trans_Maks_Tarik_Tunai_Sendiri" class="w-full bg-transparent outline-none p-1"></td><td class="border px-2 py-1"><input type="number" name="Trans_Maks_Tarik_Tunai_Antar" class="w-full bg-transparent outline-none p-1"></td></tr>
+                        <tr><td class="border px-2 py-1 font-medium">Maksimum OB Debet</td><td class="border px-2 py-1"><input type="number" name="Trans_Maks_OB_Debet_Sendiri" class="w-full bg-transparent outline-none p-1"></td><td class="border px-2 py-1"><input type="number" name="Trans_Maks_OB_Debet_Antar" class="w-full bg-transparent outline-none p-1"></td></tr>
+                        <tr><td class="border px-2 py-1 font-medium">Maksimum OB Kredet</td><td class="border px-2 py-1"><input type="number" name="Trans_Maks_OB_Kredet_Sendiri" class="w-full bg-transparent outline-none p-1"></td><td class="border px-2 py-1"><input type="number" name="Trans_Maks_OB_Kredet_Antar" class="w-full bg-transparent outline-none p-1"></td></tr>
+                        <tr><td class="border px-2 py-1 font-medium">Maksimum Setor Kliring</td><td class="border px-2 py-1"><input type="number" name="Trans_Maks_Setor_Kliring_Sendiri" class="w-full bg-transparent outline-none p-1"></td><td class="border px-2 py-1"><input type="number" name="Trans_Maks_Setor_Kliring_Antar" class="w-full bg-transparent outline-none p-1"></td></tr>
+                        <tr><td class="border px-2 py-1 font-medium">Maksimum Tarik Kliring</td><td class="border px-2 py-1"><input type="number" name="Trans_Maks_Tarik_Kliring_Sendiri" class="w-full bg-transparent outline-none p-1"></td><td class="border px-2 py-1"><input type="number" name="Trans_Maks_Tarik_Kliring_Antar" class="w-full bg-transparent outline-none p-1"></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- SECTION E -->
+            <div class="form-section-title">E. KOLOM TANDA TANGAN</div>
+            <div class="overflow-x-auto w-full mb-6">
+                <!-- Wrapper min-width agar tabel TTD tidak hancur saat dibuka di HP (bisa di-scroll ke samping) -->
+                <div id="sig-section" class="flex flex-col border-2 border-black text-center text-sm min-w-[700px]">
+                    <!-- Header Baris 1 -->
+                    <div class="grid grid-cols-4 bg-gray-100 border-b-2 border-black">
+                        <div class="border-r-2 border-black p-1 flex flex-col justify-center font-bold h-12">
+                            User<br><span class="text-[9px] font-normal">(tidak boleh diwakilkan)</span>
+                        </div>
+                        <div class="border-r-2 border-black p-1 flex flex-col justify-center font-bold h-12">
+                            Persetujuan<br><span class="text-[9px] font-normal">Dirut/Kadiv/Kepala Cabang/KCP</span>
+                        </div>
+                        <div class="col-span-2 flex flex-col">
+                            <div class="border-b-2 border-black p-0.5 font-bold text-xs h-6 flex items-center justify-center">Penginputan Data Center</div>
+                            <div class="grid grid-cols-2 h-6">
+                                <div class="border-r-2 border-black font-bold flex items-center justify-center">Staff DC</div>
+                                <div class="font-bold flex items-center justify-center">Ka Ops/Kadiv</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Area Tanda Tangan Baris 2 -->
+                    <div class="grid grid-cols-4 bg-white">
+                        <!-- User Box -->
+                        <div class="border-r-2 border-black flex flex-col h-64">
+                            <div class="flex-1 flex items-center justify-center text-gray-300 italic">Tanda Tangan</div>
+                            <div class="text-left p-1.5 border-t-2 border-black">
+                                <div class="flex items-center text-[10px] mb-0.5 font-bold">Nama: <input type="text" name="TTD_Nama_User" id="ttdUser" class="flex-1 bg-transparent outline-none uppercase px-1 font-bold" readonly></div>
+                                <div class="flex items-center text-[10px] font-bold">Tgl: <input type="date" name="TTD_Tgl_User" class="auto-date-sig flex-1 bg-transparent outline-none font-bold"></div>
+                            </div>
+                        </div>
+                        <!-- Persetujuan Box -->
+                        <div class="border-r-2 border-black flex flex-col h-64">
+                            <div class="flex-1 flex items-center justify-center text-gray-300 italic">Tanda Tangan</div>
+                            <div class="text-left p-1.5 border-t-2 border-black">
+                                <div class="flex items-center text-[10px] mb-0.5 font-bold">Nama: <input type="text" name="TTD_Nama_Persetujuan" class="flex-1 bg-transparent outline-none uppercase px-1 font-bold"></div>
+                                <div class="flex items-center text-[10px] font-bold">Tgl: <input type="date" name="TTD_Tgl_Persetujuan" class="auto-date-sig flex-1 bg-transparent outline-none font-bold"></div>
+                            </div>
+                        </div>
+                        <!-- Staff DC Box -->
+                        <div class="border-r-2 border-black flex flex-col h-64">
+                            <div class="flex-1 flex items-center justify-center text-gray-300 italic">Tanda Tangan</div>
+                            <div class="text-left p-1.5 border-t-2 border-black">
+                                <div class="flex items-center text-[10px] mb-0.5 font-bold">Nama: <input type="text" name="TTD_Nama_Staff_DC" class="flex-1 bg-transparent outline-none uppercase px-1 font-bold"></div>
+                                <div class="flex items-center text-[10px] font-bold">Tgl: <input type="date" name="TTD_Tgl_Staff_DC" class="auto-date-sig flex-1 bg-transparent outline-none font-bold"></div>
+                            </div>
+                        </div>
+                        <!-- Ka Ops Box -->
+                        <div class="flex flex-col h-64">
+                            <div class="flex-1 flex items-center justify-center text-gray-300 italic">Tanda Tangan</div>
+                            <div class="text-left p-1.5 border-t-2 border-black">
+                                <div class="flex items-center text-[10px] mb-0.5 font-bold">Nama: <input type="text" name="TTD_Nama_KaOps" class="flex-1 bg-transparent outline-none uppercase px-1 font-bold"></div>
+                                <div class="flex items-center text-[10px] font-bold">Tgl: <input type="date" name="TTD_Tgl_KaOps" class="auto-date-sig flex-1 bg-transparent outline-none font-bold"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BUTTONS -->
+            <div class="flex flex-col sm:flex-row justify-end gap-3 mt-8 no-print action-buttons">
+                <button type="button" onclick="window.print()" class="bg-gray-600 text-white font-bold py-3 px-6 rounded-lg shadow hover:bg-gray-700 transition w-full sm:w-auto">🖨️ CETAK FORM</button>
+                <button type="submit" id="btnSubmit" class="bg-blue-700 text-white font-bold py-3 px-10 rounded-lg shadow-lg hover:bg-blue-800 transition w-full sm:w-auto">KIRIM FORMULIR</button>
+            </div>
+        </form>
+    </div>
+
+    <footer class="text-center mt-8 mb-10 no-print text-gray-400 text-sm">
+        Generated by ⚡ MN90#
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof google === 'undefined') document.getElementById('modeAlert').classList.remove('hidden');
+            generateRegNumber(); resetDates(); setDefaultCabang();
+        });
+
+        function setDefaultCabang() {
+            document.querySelector('input[name="Unit_Kerja"]').value = "KANTOR CABANG WASIOR";
+            document.querySelector('input[name="Kode_Cabang"]').value = "302 - Wasior";
+            document.querySelector('input[name="Alamat_Cabang"]').value = "Jl. Topai Wasior Kab.Teluk Wondama";
+        }
+
+        function generateRegNumber() {
+            const randomNum = Math.floor(1000 + Math.random() * 9000);
+            const todayStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+            document.getElementById('noRegister').value = `REG-${todayStr}-${randomNum}`;
+        }
+
+        function resetDates() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('autoDate').value = today;
+            document.querySelectorAll('.auto-date-sig').forEach(el => el.value = today);
+        }
+
+        function syncName() {
+            const nama = document.getElementById('namaLengkap').value;
+            document.getElementById('ttdUser').value = nama;
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            const form = document.getElementById('userForm');
+            const formData = new FormData(form);
+            const dataObj = Object.fromEntries(formData.entries());
+            
+            // Handle Checkboxes
+            const checkboxes = form.querySelectorAll('input[name="Sistem_Aplikasi"]:checked');
+            let sistemList = [];
+            checkboxes.forEach(cb => {
+                if(cb.value === 'Lainnya') {
+                    const lainnyaVal = document.getElementById('inputLainnya').value;
+                    if(lainnyaVal) sistemList.push("Lain: " + lainnyaVal);
+                } else { sistemList.push(cb.value); }
+            });
+            dataObj.Sistem_Aplikasi = sistemList.join(', ');
+
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('loadingText').innerText = 'Menyimpan data...';
+
+            if (typeof google === 'undefined') {
+                setTimeout(() => {
+                    Swal.fire({ icon: 'success', title: 'Berhasil (Simulasi)', text: 'Data disimpan di memori browser.' });
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    form.reset(); resetDates(); generateRegNumber(); setDefaultCabang(); syncName();
+                }, 800);
+            } else {
+                google.script.run
+                    .withSuccessHandler((res) => {
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                        Swal.fire({ icon: 'success', title: 'Tersimpan!', text: res.message });
+                        form.reset(); resetDates(); generateRegNumber(); setDefaultCabang(); syncName();
+                    })
+                    .withFailureHandler((err) => {
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                        Swal.fire('Error', err.message, 'error');
+                    })
+                    .simpanData(dataObj);
+            }
+        }
+    </script>
+</body>
+</html>
